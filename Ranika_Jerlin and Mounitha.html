@@ -1,0 +1,950 @@
+e <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Student Finance Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #07111d;
+    --bg-soft: #0d1726;
+    --panel: rgba(13, 23, 38, 0.86);
+    --panel-strong: rgba(16, 28, 43, 0.98);
+    --panel-alt: rgba(10, 18, 31, 0.92);
+    --card: linear-gradient(180deg, rgba(14, 27, 42, 0.95), rgba(10, 18, 30, 0.96));
+    --ink: #e9f3ff;
+    --ink-soft: #9bb0c7;
+    --line: rgba(146, 188, 228, 0.18);
+    --line-strong: rgba(146, 188, 228, 0.3);
+    --in: #5eead4;
+    --in-soft: rgba(94, 234, 212, 0.12);
+    --out: #ff7e8d;
+    --out-soft: rgba(255, 126, 141, 0.12);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.16);
+    --primary: #72d7ff;
+    --primary-strong: #5aa9ff;
+    --primary-glow: rgba(114, 215, 255, 0.35);
+    --shadow: 0 20px 45px rgba(2, 6, 20, 0.6);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    position:relative;
+    background:
+      radial-gradient(circle at top left, rgba(80, 176, 255, 0.18), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(94, 234, 212, 0.14), transparent 24%),
+      linear-gradient(180deg, var(--bg) 0%, #061018 100%);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    padding:0 0 80px;
+    overflow-x:hidden;
+  }
+
+  body::before,
+  body::after{
+    content:"";
+    position:fixed;
+    inset:auto;
+    width:540px;
+    height:540px;
+    border-radius:50%;
+    filter:blur(90px);
+    opacity:0.22;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  body::before{
+    top:-180px;
+    right:-120px;
+    background:rgba(90, 169, 255, 0.42);
+  }
+
+  body::after{
+    bottom:-220px;
+    left:-140px;
+    background:rgba(94, 234, 212, 0.28);
+  }
+
+  ::selection{background:rgba(114, 215, 255, 0.32);}
+
+  a, button{font-family:inherit;}
+
+  header,
+  nav,
+  main,
+  footer{
+    position:relative;
+    z-index:1;
+  }
+
+  /* Header */
+  header{
+    max-width:920px;
+    margin:0 auto;
+    padding:50px 24px 26px;
+    border-bottom:1px solid var(--line);
+  }
+  header .eyebrow{
+    font-size:12px;
+    color:var(--primary);
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  header h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:42px;
+    letter-spacing:-0.03em;
+    margin-top:8px;
+    color:var(--ink);
+    text-shadow:0 0 18px rgba(114, 215, 255, 0.18);
+  }
+  header h1 span{
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+
+  /* Nav */
+  nav{
+    max-width:920px;
+    margin:0 auto;
+    display:flex;
+    gap:6px;
+    padding:0 24px 14px;
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  nav::-webkit-scrollbar{display:none;}
+  nav button{
+    background:rgba(12, 22, 33, 0.7);
+    border:1px solid transparent;
+    border-radius:12px 12px 0 0;
+    padding:14px 16px 12px;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all 0.22s ease;
+  }
+  nav button:hover{
+    color:var(--ink);
+    border-color:var(--line);
+    transform:translateY(-1px);
+  }
+  nav button.active{
+    color:var(--ink);
+    border-color:var(--line-strong);
+    background:linear-gradient(180deg, rgba(18, 32, 49, 0.98), rgba(12, 21, 32, 0.92));
+    box-shadow:inset 0 -2px 0 var(--primary);
+    font-weight:600;
+  }
+
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:34px 24px 0;
+  }
+  section{display:none; animation:fadeSlide 0.48s ease both;}
+  section.active{display:block;}
+
+  h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:22px;
+    margin-bottom:4px;
+    color:var(--ink);
+  }
+  .subtext{color:var(--ink-soft); font-size:14px; margin-bottom:24px;}
+
+  /* Ledger box */
+  .box,
+  .hero{
+    border:1px solid var(--line);
+    background:var(--card);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(12px);
+    position:relative;
+    overflow:hidden;
+    animation:floatCard 0.8s ease both;
+  }
+  .box::before,
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:linear-gradient(120deg, rgba(114, 215, 255, 0.06), transparent 32%, rgba(94, 234, 212, 0.04));
+    pointer-events:none;
+  }
+  .box{
+    margin-bottom:24px;
+    border-radius:20px;
+  }
+  .box-header{
+    position:relative;
+    z-index:1;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:rgba(11, 20, 31, 0.42);
+  }
+  .box-body{position:relative; z-index:1; padding:18px;}
+
+  /* Overview hero */
+  .hero{
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    gap:1px;
+    border-radius:22px;
+    margin-bottom:24px;
+    background:linear-gradient(180deg, rgba(16, 32, 48, 0.92), rgba(11, 18, 30, 0.96));
+  }
+  .hero > div{
+    position:relative;
+    z-index:1;
+    background:rgba(10, 18, 28, 0.4);
+    padding:22px;
+  }
+  .hero .label{font-size:13px; color:var(--ink-soft); margin-bottom:8px; letter-spacing:0.04em; text-transform:uppercase;}
+  .hero .balance{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:40px;
+    font-weight:600;
+    letter-spacing:-0.04em;
+    line-height:1.1;
+    text-shadow:0 0 16px rgba(94, 234, 212, 0.16);
+  }
+  .hero .balance.negative{color:var(--out);}
+  .hero .balance.positive{color:var(--in);}
+  .hero .sub-figures{
+    display:flex;
+    gap:24px;
+    margin-top:18px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .hero .sub-figures div span{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:17px;
+    color:var(--ink);
+    margin-top:2px;
+  }
+
+  .burn-row{display:flex; justify-content:space-between; font-size:13px; margin-bottom:7px; color:var(--ink-soft);}
+  .burn-row .amt{font-family:'IBM Plex Mono', monospace; color:var(--ink);}
+  .burn-bar{
+    height:10px;
+    background:rgba(146, 188, 228, 0.08);
+    border:1px solid var(--line);
+    border-radius:999px;
+    margin:10px 0 4px;
+    position:relative;
+    overflow:hidden;
+  }
+  .burn-bar-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--primary), var(--in));
+    box-shadow:0 0 18px rgba(114, 215, 255, 0.46);
+  }
+  .burn-note{font-size:12.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+  .burn-note.warn{color:var(--warn);}
+  .burn-note.bad{color:var(--out);}
+
+  /* Category bars */
+  .cat-row{display:flex; align-items:center; gap:12px; margin-bottom:12px; font-size:13px;}
+  .cat-name{width:140px; flex-shrink:0; color:var(--ink-soft);}
+  .cat-bar-track{
+    flex:1;
+    height:10px;
+    border-radius:999px;
+    background:rgba(146, 188, 228, 0.08);
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .cat-bar-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg, #ff7e8d, #ffb07a);
+    box-shadow:0 0 18px rgba(255, 126, 141, 0.3);
+  }
+  .cat-amt{width:90px; text-align:right; font-family:'IBM Plex Mono', monospace; flex-shrink:0; color:var(--ink);}
+
+  /* Forms */
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+  .field{display:flex; flex-direction:column; gap:7px;}
+  .field.full{grid-column:1/-1;}
+  label{font-size:12.5px; color:var(--ink-soft);}
+  input, select{
+    background:rgba(8, 14, 22, 0.92);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:11px 12px;
+    font-size:14px;
+    color:var(--ink);
+    font-family:inherit;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  input::placeholder{color:rgba(155, 176, 199, 0.72);}
+  input:focus, select:focus, button:focus-visible{
+    outline:none;
+    border-color:rgba(114, 215, 255, 0.7);
+    box-shadow:0 0 0 3px rgba(114, 215, 255, 0.14);
+  }
+  .type-toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    background:rgba(9, 17, 27, 0.7);
+  }
+  .type-toggle button{
+    flex:1;
+    padding:11px;
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    font-size:14px;
+    color:var(--ink-soft);
+    transition:all 0.2s ease;
+  }
+  .type-toggle button.active.income{background:var(--in-soft); color:var(--in); font-weight:600;}
+  .type-toggle button.active.expense{background:var(--out-soft); color:var(--out); font-weight:600;}
+
+  .btn{
+    background:linear-gradient(135deg, var(--primary), var(--primary-strong));
+    color:#041118;
+    border:none;
+    border-radius:12px;
+    padding:12px 18px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:6px;
+    box-shadow:0 12px 26px rgba(90, 169, 255, 0.22);
+    transition:transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 18px 28px rgba(90, 169, 255, 0.25);
+    filter:saturate(1.08);
+  }
+  .btn.secondary{
+    background:rgba(10, 18, 28, 0.7);
+    color:var(--ink);
+    border:1px solid var(--line);
+    box-shadow:none;
+  }
+  .btn.secondary:hover{background:rgba(21, 31, 44, 0.7);}
+  .btn.danger{color:var(--out);}
+
+  /* Transactions table */
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{
+    text-align:left;
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:12px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  td{padding:11px 12px; border-bottom:1px solid rgba(146, 188, 228, 0.08); color:var(--ink);}
+  tr:last-child td{border-bottom:none;}
+  td.amt{font-family:'IBM Plex Mono', monospace; text-align:right;}
+  td.amt.in{color:var(--in);}
+  td.amt.out{color:var(--out);}
+  td.del{text-align:right; width:24px;}
+  td.del button{
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    transition:color 0.2s ease, transform 0.2s ease;
+  }
+  td.del button:hover{color:var(--out); transform:scale(1.08);}
+  .empty-row td{text-align:center; color:var(--ink-soft); padding:32px 12px;}
+
+  /* Subscriptions */
+  .sub-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:13px 0;
+    border-bottom:1px solid rgba(146, 188, 228, 0.08);
+    transition:transform 0.2s ease;
+  }
+  .sub-item:hover{transform:translateX(2px);}
+  .sub-item:last-child{border-bottom:none;}
+  .sub-item .name{font-size:14px; font-weight:600;}
+  .sub-item .cycle{font-size:12px; color:var(--ink-soft);}
+  .sub-item .right{display:flex; align-items:center; gap:14px;}
+  .sub-item .amt{font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--ink);}
+
+  /* Split calculator */
+  .split-result{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:32px;
+    margin:14px 0 6px;
+    color:var(--ink);
+    text-shadow:0 0 18px rgba(114, 215, 255, 0.16);
+  }
+  .split-note{font-size:13px; color:var(--ink-soft); margin-bottom:16px;}
+
+  .row-flex{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;}
+
+  footer{
+    max-width:920px;
+    margin:40px auto 0;
+    padding:20px 24px 0;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+
+  @keyframes fadeSlide{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  @keyframes floatCard{
+    from{opacity:0; transform:translateY(12px) scale(0.985);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+
+  @media (max-width:600px){
+    header h1{font-size:32px;}
+    .hero{grid-template-columns:1fr;}
+    .form-grid, .form-grid.three{grid-template-columns:1fr;}
+    .box{border-radius:16px;}
+    nav{padding-left:16px; padding-right:16px;}
+    main{padding-left:16px; padding-right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">College finance ledger</div>
+  <h1>Ledger <span>for students</span></h1>
+</header>
+
+<nav id="tabs">
+  <button data-tab="overview" class="active">Overview</button>
+  <button data-tab="add">Add entry</button>
+  <button data-tab="transactions">Transactions</button>
+  <button data-tab="subscriptions">Subscriptions</button>
+  <button data-tab="split">Split a bill</button>
+  <button data-tab="settings">Semester setup</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section id="overview" class="active">
+    <h2>This semester</h2>
+    <p class="subtext" id="semesterLabel">Set your semester dates and budget under Semester setup.</p>
+
+    <div class="hero">
+      <div>
+        <div class="label">Balance</div>
+        <div class="balance" id="heroBalance">₹0</div>
+        <div class="sub-figures">
+          <div>In<span id="heroIn">₹0</span></div>
+          <div>Out<span id="heroOut">₹0</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="label">Burn rate</div>
+        <div id="burnBox">
+          <p class="burn-note">Add a semester budget to see your burn rate.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-header"><span>Spending by category</span><span id="catTotal">₹0</span></div>
+      <div class="box-body" id="catBreakdown">
+        <p class="subtext" style="margin-bottom:0;">No expenses logged yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD ENTRY -->
+  <section id="add">
+    <h2>Add an entry</h2>
+    <p class="subtext">Log income or an expense.</p>
+    <div class="box">
+      <div class="box-body">
+        <div class="type-toggle" style="margin-bottom:16px;">
+          <button type="button" id="toggleExpense" class="active expense">Expense</button>
+          <button type="button" id="toggleIncome" class="income">Income</button>
+        </div>
+        <form id="txForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="txAmount">Amount (₹)</label>
+              <input type="number" id="txAmount" min="0" step="0.01" required placeholder="0.00">
+            </div>
+            <div class="field">
+              <label for="txCategory">Category</label>
+              <select id="txCategory"></select>
+            </div>
+            <div class="field full">
+              <label for="txNote">Note (optional)</label>
+              <input type="text" id="txNote" placeholder="e.g. Mess bill for September">
+            </div>
+            <div class="field">
+              <label for="txDate">Date</label>
+              <input type="date" id="txDate" required>
+            </div>
+          </div>
+          <button type="submit" class="btn">Add entry</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="transactions">
+    <h2>All transactions</h2>
+    <p class="subtext">Every entry, most recent first.</p>
+    <div class="box">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Category</th><th>Note</th><th style="text-align:right;">Amount</th><th></th></tr>
+        </thead>
+        <tbody id="txTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SUBSCRIPTIONS -->
+  <section id="subscriptions">
+    <h2>Recurring subscriptions</h2>
+    <p class="subtext">Track what you're paying for on repeat, so nothing quietly drains your balance.</p>
+
+    <div class="box">
+      <div class="box-header"><span>Active subscriptions</span><span id="subMonthlyTotal">₹0 / month</span></div>
+      <div class="box-body" id="subList">
+        <p class="subtext" style="margin-bottom:0;">No subscriptions added yet.</p>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-body">
+        <form id="subForm">
+          <div class="form-grid three">
+            <div class="field">
+              <label for="subName">Name</label>
+              <input type="text" id="subName" placeholder="e.g. Spotify" required>
+            </div>
+            <div class="field">
+              <label for="subAmount">Amount (₹)</label>
+              <input type="number" id="subAmount" min="0" step="0.01" required>
+            </div>
+            <div class="field">
+              <label for="subCycle">Billing cycle</label>
+              <select id="subCycle">
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn">Add subscription</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPLIT -->
+  <section id="split">
+    <h2>Split a bill</h2>
+    <p class="subtext">Work out your share of a group expense, then log it straight to your ledger.</p>
+    <div class="box">
+      <div class="box-body">
+        <div class="form-grid three">
+          <div class="field">
+            <label for="splitTotal">Total bill (₹)</label>
+            <input type="number" id="splitTotal" min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label for="splitPeople">Number of people</label>
+            <input type="number" id="splitPeople" min="1" step="1" value="2">
+          </div>
+          <div class="field">
+            <label for="splitNote">Note (optional)</label>
+            <input type="text" id="splitNote" placeholder="e.g. Birthday dinner">
+          </div>
+        </div>
+        <div class="split-result" id="splitResult">₹0.00</div>
+        <div class="split-note">Your share, if split evenly.</div>
+        <button class="btn" id="splitAddBtn">Add my share as expense</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings">
+    <h2>Semester setup</h2>
+    <p class="subtext">Set your semester window and budget so Overview can calculate your burn rate.</p>
+    <div class="box">
+      <div class="box-body">
+        <form id="settingsForm">
+          <div class="form-grid three">
+            <div class="field">
+              <label for="semStart">Semester start</label>
+              <input type="date" id="semStart">
+            </div>
+            <div class="field">
+              <label for="semEnd">Semester end</label>
+              <input type="date" id="semEnd">
+            </div>
+            <div class="field">
+              <label for="semBudget">Total budget (₹)</label>
+              <input type="number" id="semBudget" min="0" step="0.01" placeholder="e.g. 25000">
+            </div>
+          </div>
+          <button type="submit" class="btn">Save semester settings</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-body">
+        <p class="subtext" style="margin-bottom:12px;">All data is stored only in this browser (localStorage). Nothing leaves your device.</p>
+        <button class="btn secondary danger" id="resetBtn">Clear all data</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Ledger — a lightweight budget tracker built for college life. Data stays on this device.
+</footer>
+
+<script>
+(function(){
+  const EXPENSE_CATS = ["Food & Mess","Hostel/Rent","Books & Supplies","Subscriptions","Travel","Outings","Course Fees","Other"];
+  const INCOME_CATS = ["Allowance","Scholarship","Freelance/Gig","Part-time Job","Other"];
+
+  const state = {
+    transactions: JSON.parse(localStorage.getItem('ledger_transactions') || '[]'),
+    subscriptions: JSON.parse(localStorage.getItem('ledger_subscriptions') || '[]'),
+    settings: JSON.parse(localStorage.getItem('ledger_settings') || '{}')
+  };
+
+  function save(){
+    localStorage.setItem('ledger_transactions', JSON.stringify(state.transactions));
+    localStorage.setItem('ledger_subscriptions', JSON.stringify(state.subscriptions));
+    localStorage.setItem('ledger_settings', JSON.stringify(state.settings));
+  }
+
+  function fmt(n){
+    return '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  /* ---------- Tabs ---------- */
+  const tabButtons = document.querySelectorAll('#tabs button');
+  tabButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabButtons.forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ---------- Add entry form ---------- */
+  let currentType = 'expense';
+  const toggleExpense = document.getElementById('toggleExpense');
+  const toggleIncome = document.getElementById('toggleIncome');
+  const txCategory = document.getElementById('txCategory');
+
+  function populateCategories(){
+    const cats = currentType === 'expense' ? EXPENSE_CATS : INCOME_CATS;
+    txCategory.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+  populateCategories();
+  document.getElementById('txDate').valueAsDate = new Date();
+
+  toggleExpense.addEventListener('click', ()=>{
+    currentType = 'expense';
+    toggleExpense.classList.add('active'); toggleIncome.classList.remove('active');
+    populateCategories();
+  });
+  toggleIncome.addEventListener('click', ()=>{
+    currentType = 'income';
+    toggleIncome.classList.add('active'); toggleExpense.classList.remove('active');
+    populateCategories();
+  });
+
+  document.getElementById('txForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById('txAmount').value);
+    if(!amount || amount <= 0) return;
+    state.transactions.push({
+      id: uid(),
+      type: currentType,
+      amount: amount,
+      category: txCategory.value,
+      note: document.getElementById('txNote').value.trim(),
+      date: document.getElementById('txDate').value || new Date().toISOString().slice(0,10)
+    });
+    save();
+    document.getElementById('txForm').reset();
+    document.getElementById('txDate').valueAsDate = new Date();
+    renderAll();
+  });
+
+  /* ---------- Transactions table ---------- */
+  function renderTransactions(){
+    const body = document.getElementById('txTableBody');
+    const sorted = [...state.transactions].sort((a,b)=> b.date.localeCompare(a.date));
+    if(sorted.length === 0){
+      body.innerHTML = `<tr class="empty-row"><td colspan="5">No transactions yet. Add your first entry.</td></tr>`;
+      return;
+    }
+    body.innerHTML = sorted.map(tx=>`
+      <tr>
+        <td>${tx.date}</td>
+        <td>${tx.category}</td>
+        <td>${tx.note || '—'}</td>
+        <td class="amt ${tx.type === 'income' ? 'in' : 'out'}">${tx.type === 'income' ? '+' : '−'}${fmt(tx.amount)}</td>
+        <td class="del"><button data-id="${tx.id}" title="Delete">✕</button></td>
+      </tr>
+    `).join('');
+    body.querySelectorAll('button[data-id]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        state.transactions = state.transactions.filter(t=>t.id !== btn.dataset.id);
+        save();
+        renderAll();
+      });
+    });
+  }
+
+  /* ---------- Overview ---------- */
+  function renderOverview(){
+    const totalIn = state.transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const totalOut = state.transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    const balance = totalIn - totalOut;
+
+    const balEl = document.getElementById('heroBalance');
+    balEl.textContent = fmt(balance);
+    balEl.className = 'balance ' + (balance < 0 ? 'negative' : 'positive');
+    document.getElementById('heroIn').textContent = fmt(totalIn);
+    document.getElementById('heroOut').textContent = fmt(totalOut);
+
+    // Semester label + burn rate
+    const s = state.settings;
+    const label = document.getElementById('semesterLabel');
+    const burnBox = document.getElementById('burnBox');
+    if(s.start && s.end){
+      const start = new Date(s.start), end = new Date(s.end), today = new Date();
+      label.textContent = `Semester: ${s.start} → ${s.end}`;
+      const totalDays = Math.max(1, Math.round((end - start) / 86400000));
+      const daysElapsed = Math.min(totalDays, Math.max(0, Math.round((today - start) / 86400000)));
+      const daysLeft = Math.max(0, totalDays - daysElapsed);
+      const pct = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
+
+      let html = `
+        <div class="burn-row"><span>Days elapsed</span><span class="amt">${daysElapsed} / ${totalDays}</span></div>
+        <div class="burn-bar"><div class="burn-bar-fill" style="width:${pct}%"></div></div>
+      `;
+
+      if(s.budget){
+        const budget = parseFloat(s.budget);
+        const idealDaily = budget / totalDays;
+        const actualDaily = daysElapsed > 0 ? totalOut / daysElapsed : 0;
+        const projectedTotal = actualDaily * totalDays;
+        const projectedRemainder = budget - (totalOut + actualDaily * daysLeft);
+
+        html += `
+          <div class="burn-row" style="margin-top:10px;"><span>Spent so far</span><span class="amt">${fmt(totalOut)} of ${fmt(budget)}</span></div>
+          <div class="burn-row"><span>Ideal pace</span><span class="amt">${fmt(idealDaily)}/day</span></div>
+          <div class="burn-row"><span>Your pace</span><span class="amt">${fmt(actualDaily)}/day</span></div>
+        `;
+
+        if(actualDaily > idealDaily * 1.15){
+          const shortDays = projectedRemainder < 0 ? Math.round(-projectedRemainder / actualDaily) : 0;
+          html += `<p class="burn-note bad">At this rate, projected spend is ${fmt(projectedTotal)} — you're likely to run short${shortDays > 0 ? ` by about ${shortDays} day(s) before semester end` : ''}.</p>`;
+        } else if(actualDaily > idealDaily){
+          html += `<p class="burn-note warn">Slightly above your ideal daily pace of ${fmt(idealDaily)}. Worth watching.</p>`;
+        } else {
+          html += `<p class="burn-note">On pace. Projected spend by semester end: ${fmt(projectedTotal)}.</p>`;
+        }
+      } else {
+        html += `<p class="burn-note">Add a total budget in Semester setup to see pace and projections.</p>`;
+      }
+      burnBox.innerHTML = html;
+    } else {
+      label.textContent = 'Set your semester dates and budget under Semester setup.';
+      burnBox.innerHTML = `<p class="burn-note">Add a semester budget to see your burn rate.</p>`;
+    }
+
+    // Category breakdown
+    const catTotals = {};
+    state.transactions.filter(t=>t.type==='expense').forEach(t=>{
+      catTotals[t.category] = (catTotals[t.category] || 0) + t.amount;
+    });
+    const catEntries = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+    const catTotalSum = catEntries.reduce((s,[,v])=>s+v,0);
+    document.getElementById('catTotal').textContent = fmt(catTotalSum);
+
+    const catBox = document.getElementById('catBreakdown');
+    if(catEntries.length === 0){
+      catBox.innerHTML = `<p class="subtext" style="margin-bottom:0;">No expenses logged yet.</p>`;
+    } else {
+      const max = catEntries[0][1];
+      catBox.innerHTML = catEntries.map(([cat,val])=>`
+        <div class="cat-row">
+          <div class="cat-name">${cat}</div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${Math.max(4,(val/max)*100)}%"></div></div>
+          <div class="cat-amt">${fmt(val)}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  /* ---------- Subscriptions ---------- */
+  document.getElementById('subForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('subName').value.trim();
+    const amount = parseFloat(document.getElementById('subAmount').value);
+    const cycle = document.getElementById('subCycle').value;
+    if(!name || !amount) return;
+    state.subscriptions.push({id: uid(), name, amount, cycle});
+    save();
+    document.getElementById('subForm').reset();
+    renderSubscriptions();
+  });
+
+  function renderSubscriptions(){
+    const list = document.getElementById('subList');
+    if(state.subscriptions.length === 0){
+      list.innerHTML = `<p class="subtext" style="margin-bottom:0;">No subscriptions added yet.</p>`;
+      document.getElementById('subMonthlyTotal').textContent = fmt(0) + ' / month';
+      return;
+    }
+    let monthlyTotal = 0;
+    list.innerHTML = state.subscriptions.map(sub=>{
+      const monthlyEquiv = sub.cycle === 'yearly' ? sub.amount / 12 : sub.amount;
+      monthlyTotal += monthlyEquiv;
+      return `
+        <div class="sub-item">
+          <div>
+            <div class="name">${sub.name}</div>
+            <div class="cycle">${sub.cycle === 'yearly' ? 'Billed yearly' : 'Billed monthly'}</div>
+          </div>
+          <div class="right">
+            <div class="amt">${fmt(sub.amount)}</div>
+            <button data-id="${sub.id}" title="Remove" style="background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:16px;">✕</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('subMonthlyTotal').textContent = fmt(monthlyTotal) + ' / month';
+    list.querySelectorAll('button[data-id]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        state.subscriptions = state.subscriptions.filter(s=>s.id !== btn.dataset.id);
+        save();
+        renderSubscriptions();
+      });
+    });
+  }
+
+  /* ---------- Split calculator ---------- */
+  function computeSplit(){
+    const total = parseFloat(document.getElementById('splitTotal').value) || 0;
+    const people = parseInt(document.getElementById('splitPeople').value) || 1;
+    const share = total / Math.max(1, people);
+    document.getElementById('splitResult').textContent = fmt(share);
+    return share;
+  }
+  document.getElementById('splitTotal').addEventListener('input', computeSplit);
+  document.getElementById('splitPeople').addEventListener('input', computeSplit);
+  document.getElementById('splitAddBtn').addEventListener('click', ()=>{
+    const share = computeSplit();
+    if(!share || share <= 0) return;
+    state.transactions.push({
+      id: uid(),
+      type: 'expense',
+      amount: share,
+      category: 'Outings',
+      note: document.getElementById('splitNote').value.trim() || 'Split bill',
+      date: new Date().toISOString().slice(0,10)
+    });
+    save();
+    document.getElementById('splitTotal').value = '';
+    document.getElementById('splitNote').value = '';
+    document.getElementById('splitResult').textContent = fmt(0);
+    renderAll();
+  });
+
+  /* ---------- Settings ---------- */
+  function loadSettingsForm(){
+    document.getElementById('semStart').value = state.settings.start || '';
+    document.getElementById('semEnd').value = state.settings.end || '';
+    document.getElementById('semBudget').value = state.settings.budget || '';
+  }
+  document.getElementById('settingsForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    state.settings = {
+      start: document.getElementById('semStart').value,
+      end: document.getElementById('semEnd').value,
+      budget: document.getElementById('semBudget').value
+    };
+    save();
+    renderAll();
+  });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(confirm('This will permanently clear all transactions, subscriptions, and settings on this device. Continue?')){
+      state.transactions = [];
+      state.subscriptions = [];
+      state.settings = {};
+      save();
+      loadSettingsForm();
+      renderAll();
+    }
+  });
+
+  function renderAll(){
+    renderOverview();
+    renderTransactions();
+    renderSubscriptions();
+  }
+
+  loadSettingsForm();
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
